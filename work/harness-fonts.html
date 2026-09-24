@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"></head><body>
+<pre id="out">RUNNING</pre>
+<script>
+const f = document.createElement('iframe');
+f.style.cssText = 'width:1440px;height:900px;border:0';
+f.src = '../location.html';
+f.onload = () => setTimeout(() => {
+  const d = f.contentDocument, w = f.contentWindow;
+  const cs = (sel) => { const el = d.querySelector(sel); return el ? w.getComputedStyle(el).fontFamily : 'n/a'; };
+  const fs = (sel) => { const el = d.querySelector(sel); return el ? w.getComputedStyle(el).fontSize : 'n/a'; };
+  const loaded = [...d.fonts].map(x => x.family + ':' + x.status).join(' | ');
+  const lines = [
+    'body font-family = ' + cs('body'),
+    'h1 font-family   = ' + cs('.page-hero h1'),
+    'h2 font-family   = ' + cs('.section h2'),
+    'lead font-size   = ' + fs('.lead'),
+    'card ct font     = ' + cs('.card .ct') + ' @ ' + fs('.card .ct'),
+    'facts td font    = ' + fs('.facts td'),
+    'fonts loaded     = ' + loaded
+  ];
+  document.getElementById('out').textContent = lines.join('\n');
+}, 1200);
+document.body.appendChild(f);
+</script>
+</body></html>

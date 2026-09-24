@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"></head><body>
+<pre id="out">RUNNING</pre>
+<script>
+const out = [];
+let pending = 3;
+
+/* 1) index: 照片墙 + gate 退出动画 */
+const f1 = document.createElement('iframe');
+f1.style.cssText = 'width:390px;height:844px;border:0';
+f1.src = '../index.html';
+f1.onload = () => setTimeout(() => {
+  try {
+    const d = f1.contentDocument, w = f1.contentWindow;
+    const gate = d.querySelector('.splash-gate');
+    const r = { gateVisible: !gate.classList.contains('hidden') };
+    // 点击進入 → 应有 leaving 过渡态
+    gate.querySelector('[data-gate-enter]').click();
+    r.leavingRightAway = gate.classList.contains('leaving');
+    r.hiddenRightAway = gate.classList.contains('hidden');
+    setTimeout(() => {
+      r.hiddenAfterAnim = gate.classList.contains('hidden');
+      // 照片墙
+      const car = d.getElementById('envCarousel');
+      r.carousel = !!car;
+      r.slides = car ? car.querySelectorAll('.carousel-slide').length : 0;
+      r.imgs = car ? car.querySelectorAll('.carousel-slide img').length : 0;
+      r.dots = car ? car.querySelectorAll('.carousel-dots button').length : 0;
+      r.trackTransform = car ? car.querySelector('.carousel-track').style.transform : '';
+      // 手动 next
+      if (car) car.querySelector('.carousel-btn.next').click();
+      setTimeout(() => {
+        r.trackAfterNext = car ? car.querySelector('.carousel-track').style.transform : '';
+        // 自动播放：等待 5s 看是否自动前进
+        setTimeout(() => {
+          r.trackAfterAuto = car ? car.querySelector('.carousel-track').style.transform : '';
+          // hero 错落延迟
+          const heroFades = d.querySelectorAll('.hero-inner .fade-up');
+          r.heroWithIn = [...heroFades].filter(e => e.classList.contains('in')).length;
+          out[0] = 'INDEX: ' + JSON.stringify(r);
+          if (--pending === 0) finish();
+        }, 5200);
+      }, 200);
+    }, 900);
+  } catch (e) { out[0] = 'INDEX ERR ' + e.message; if (--pending === 0) finish(); }
+}, 1500);
+document.body.appendChild(f1);
+
+/* 2) vr.html: 跳转卡与相对路径 */
+const f2 = document.createElement('iframe');
+f2.style.cssText = 'width:390px;height:844px;border:0;position:absolute;left:450px;top:0';
+f2.src = '../vr.html';
+f2.onload = () => setTimeout(() => {
+  try {
+    const d = f2.contentDocument;
+    const link = d.querySelector('.vr-launch-btn');
+    const r = {
+      launchBtn: !!link,
+      href: link ? link.getAttribute('href') : 'n/a',
+      isRelative: link ? !/^https?:|^\//.test(link.getAttribute('href')) : false,
+      iframe: !!d.querySelector('.vr-frame'),
+      canvas: !!d.querySelector('#vr-canvas'),
+      img: d.querySelector('.vr-launch-bg') ? d.querySelector('.vr-launch-bg').getAttribute('src') : 'n/a'
+    };
+    out[1] = 'VR: ' + JSON.stringify(r);
+  } catch (e) { out[1] = 'VR ERR ' + e.message; }
+  if (--pending === 0) finish();
+}, 1500);
+document.body.appendChild(f2);
+
+/* 3) 法律弹窗开/关动画类切换 */
+const f3 = document.createElement('iframe');
+f3.style.cssText = 'width:390px;height:844px;border:0;position:absolute;left:900px;top:0';
+f3.src = '../privacy.html';
+f3.onload = () => setTimeout(() => {
+  try {
+    const d = f3.contentDocument;
+    const openLink = d.querySelector('[data-legal-open]');
+    const modal = d.querySelector('.legal-modal');
+    const r = { link: !!openLink, modal: !!modal };
+    openLink.click();
+    r.openAfterClick = modal.classList.contains('open');
+    d.querySelector('[data-legal-close]').click();
+    r.leavingAfterClose = modal.classList.contains('leaving');
+    r.stillOpenRightAway = modal.classList.contains('open');
+    setTimeout(() => {
+      r.openAfterAnim = modal.classList.contains('open');
+      out[2] = 'MODAL: ' + JSON.stringify(r);
+      if (--pending === 0) finish();
+    }, 600);
+  } catch (e) { out[2] = 'MODAL ERR ' + e.message; if (--pending === 0) finish(); }
+}, 1500);
+document.body.appendChild(f3);
+
+function finish() { document.getElementById('out').textContent = out.join('\n'); }
+</script>
+</body></html>

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"></head><body>
+<pre id="out">RUNNING</pre>
+<script>
+const pages = ['index','the-atlas','location','sales-info','media','privacy','vr'];
+const widths = [1440, 390];
+const results = [];
+let done = 0, total = pages.length * widths.length;
+for (const w of widths) for (const p of pages) {
+  const f = document.createElement('iframe');
+  f.style.cssText = `width:${w}px;height:800px;border:0`;
+  f.src = `../${p}.html`;
+  f.onload = () => setTimeout(() => {
+    try {
+      const d = f.contentDocument;
+      const de = d.documentElement, b = d.body;
+      const sw = Math.max(de.scrollWidth, b.scrollWidth);
+      const cw = de.clientWidth;
+      const hscroll = sw > cw + 1;
+      const imgs = [...d.images];
+      const broken = imgs.filter(i => i.complete && i.naturalWidth === 0).map(i => i.src);
+      const ext = [...d.querySelectorAll('a[href^="http"],script[src^="http"],link[href^="http"],img[src^="http"]')]
+        .map(e => e.href || e.src);
+      const lang = d.documentElement.lang;
+      const title = d.querySelector('.hero-title,h1')?.textContent || '';
+      const navCount = d.querySelectorAll('.site-nav a').length;
+      const vids = [...d.querySelectorAll('video')];
+      const vidInfo = vids.map(v => `${v.getAttribute('src')}|rs=${v.readyState}|loop=${v.loop}|vw=${v.videoWidth}x${v.videoHeight}`).join(',');
+      // 字体是否真正加载（非 fallback）
+      const h1 = d.querySelector('.page-hero h1, .section h2');
+      let fontUsed = '';
+      if (h1) { const r = h1.getBoundingClientRect(); fontUsed = r.width > 0 ? 'rendered' : 'hidden'; }
+      const fontsLoaded = d.fonts ? d.fonts.status : 'n/a';
+      // 法律弹窗
+      const modal = d.querySelector('.legal-modal');
+      const modalParas = modal ? modal.querySelectorAll('.legal-modal__body p').length : -1;
+      // 字号检查
+      const bodyFs = d.defaultView.getComputedStyle(d.body).fontSize;
+      const h1El = d.querySelector('.page-hero h1');
+      const h1Fs = h1El ? d.defaultView.getComputedStyle(h1El).fontSize : 'n/a';
+      const leadEl = d.querySelector('.lead');
+      const leadFs = leadEl ? d.defaultView.getComputedStyle(leadEl).fontSize : 'n/a';
+      results.push(`${p} @${w}: hscroll=${hscroll} (sw=${sw},cw=${cw}) imgs=${imgs.length} broken=[${broken}] ext=[${ext}] nav=${navCount} videos=[${vidInfo}] fonts=${fontsLoaded} bodyFs=${bodyFs} h1Fs=${h1Fs} leadFs=${leadFs} legalParas=${modalParas} title="${title}"`);
+    } catch (e) { results.push(`${p} @${w}: ERROR ${e.message}`); }
+    if (++done === total) document.getElementById('out').textContent = results.join('\n');
+  }, 600);
+  document.body.appendChild(f);
+}
+</script>
+</body></html>

@@ -1,0 +1,9 @@
+# 客户内部资料（户型平面图、消耗表等），不公开发布
+work/internal-only/
+
+# 本地临时与系统文件
+*.log
+*.tmp
+.DS_Store
+Thumbs.db
+desktop.ini

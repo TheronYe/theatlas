@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"></head><body>
+<pre id="out">RUNNING</pre>
+<script>
+try { sessionStorage.setItem('atlas-legal-accepted', '1'); } catch (e) {}
+window.onerror = function (m) { document.getElementById('out').textContent = 'JS ERR: ' + m; };
+const out = [];
+let pending = 5;
+
+/* 1-4) 两页 × 两视口 */
+const cases = [['the-atlas', 1440, 900], ['the-atlas', 390, 844], ['location', 1440, 900], ['location', 390, 844]];
+cases.forEach((c, i) => {
+  const f = document.createElement('iframe');
+  f.style.cssText = 'width:' + c[1] + 'px;height:' + c[2] + 'px;border:0';
+  f.src = '../' + c[0] + '.html';
+  f.onload = () => setTimeout(() => {
+    try {
+      const d = f.contentDocument;
+      const sw = Math.max(d.documentElement.scrollWidth, d.body.scrollWidth);
+      out[i] = JSON.stringify({
+        p: c[0], vp: c[1],
+        hscroll: sw > d.documentElement.clientWidth + 1,
+        imgs: d.images.length,
+        broken: [...d.images].filter(x => x.complete && x.naturalWidth === 0).length,
+        facilities: d.querySelectorAll('.facility').length,
+        stats: d.querySelectorAll('.stat').length,
+        photoCards: d.querySelectorAll('.photo-card').length,
+        notes: d.querySelectorAll('.notes-list li').length,
+        kickers: d.querySelectorAll('.kicker').length
+      });
+    } catch (e) { out[i] = c[0] + ' ERR ' + e.message; }
+    if (--pending === 0) document.getElementById('out').textContent = out.join('\n');
+  }, 3000);
+  document.body.appendChild(f);
+});
+
+/* 5) 数字滚动：滚动 stats 进入视口后应完成计数 */
+const f5 = document.createElement('iframe');
+f5.style.cssText = 'width:390px;height:844px;border:0;position:absolute;left:1500px;top:0';
+f5.src = '../location.html';
+f5.onload = () => setTimeout(() => {
+  const d = f5.contentDocument, w = f5.contentWindow;
+  const stat = d.querySelector('.stat');
+  stat.scrollIntoView({ block: 'center' });
+  setTimeout(() => {
+    out[4] = JSON.stringify({
+      statDone: [...d.querySelectorAll('.stat-num[data-done]')].length,
+      values: [...d.querySelectorAll('.stat-num')].map(x => x.textContent).join(','),
+      expected: [...d.querySelectorAll('.stat-num')].map(x => x.getAttribute('data-count')).join(',')
+    });
+    if (--pending === 0) document.getElementById('out').textContent = out.join('\n');
+  }, 2200);
+}, 2500);
+document.body.appendChild(f5);
+</script>
+</body></html>

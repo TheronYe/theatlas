@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-HK"><head><meta charset="UTF-8">
+<link rel="stylesheet" href="../assets/css/fonts.css">
+<link rel="stylesheet" href="../assets/css/style.css">
+<style>body{margin:0;padding:0}</style>
+</head><body data-page="home">
+
+<!-- 测试用元素：用 transform 模拟在/不在视口（getBoundingClientRect 会反映 transform） -->
+<div class="section" style="padding:0">
+  <p class="lead fade-up" id="probe" style="margin-top:3000px">probe</p>
+</div>
+
+<pre id="out" style="position:fixed;top:0;left:0;z-index:99;background:#fff">RUNNING</pre>
+
+<script src="../assets/js/i18n.js"></script>
+<script src="../assets/js/main.js"></script>
+<script>
+(function () {
+  var probe = document.getElementById('probe');
+  var log = [];
+  function step(label, cb) { setTimeout(cb, 900); }
+  function rec(label) { log.push(label + ': in=' + probe.classList.contains('in') + ' top=' + Math.round(probe.getBoundingClientRect().top)); }
+
+  setTimeout(function () {
+    rec('1-out-of-viewport');           // 期望 in=false
+    probe.style.marginTop = '0px';   // 移入视口
+    step('', function () {
+      rec('2-moved-into-viewport');     // 期望 in=true
+      probe.style.marginTop = '3000px'; // 移出视口
+      step('', function () {
+        rec('3-moved-out-again');       // 期望 in=false（复位）
+        probe.style.marginTop = '0px';   // 再次移入 → 动画重播
+        step('', function () {
+          rec('4-moved-back-in');       // 期望 in=true（循环重播）
+          document.getElementById('out').textContent = log.join('\n');
+        });
+      });
+    });
+  }, 900);
+})();
+</script>
+</body></html>
